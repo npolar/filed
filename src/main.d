@@ -18,7 +18,7 @@ struct FileMetaData
 
 int main(string[] args)
 {
-	enum    PROGRAM_VERSION     = 0.12;
+	enum    PROGRAM_VERSION     = 0.13;
 	enum    PROGRAM_BUILD_YEAR  = "2015";
 
 	ushort  port                = 0xEA7;    // Listening port number (3751)
@@ -29,6 +29,7 @@ int main(string[] args)
 	// Parse program arguments as options
 	bool optHelp, optVersion;
 	auto optParser = getopt(args,
+		"d|file-dir",   "existing file upload save path (default: files)",  &fileDir,
 		"m|max-size",   "maximum file size for uploads (default: 10MiB)",   &maxFileSize,
 		"p|port",       "filed server listening port (default: 3751)",      &port,
 		"cors",         "enable cross-origin resource sharing (CORS)",      &corsEnabled,
