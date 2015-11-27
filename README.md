@@ -7,6 +7,7 @@ Simple file server **prototype**  backend written in D.
 *apptest*:
 ```sh
 cd /srv/filed
+sudo su
 git pull
 dub build --build=release
 ```
