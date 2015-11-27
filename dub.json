@@ -1,0 +1,24 @@
+{
+	"name": "filed",
+	"description": "Simple RESTful File Server",
+	"license": "MIT",
+	"authors": [
+		"Remi A. Solås <remi@npolar.no>"
+	],
+	"targetPath": "bin",
+	"dependencies": {
+		"vibe-d": "~>0.7.23"
+	},
+	"configurations": [
+		{
+			"name": "application",
+			"targetType": "executable",
+			"mainSourceFile": "src/main.d",
+			"versions": [
+				"VibeLibeventDriver",
+				"VibeCustomMain"
+			]
+		}
+	]
+}
+
