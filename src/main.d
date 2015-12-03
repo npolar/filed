@@ -18,7 +18,7 @@ struct FileMetaData
 
 int main(string[] args)
 {
-	enum    PROGRAM_VERSION     = 0.13;
+	enum    PROGRAM_VERSION     = 0.14;
 	enum    PROGRAM_BUILD_YEAR  = "2015";
 
 	ushort  port                = 0xEA7;    // Listening port number (3751)
@@ -119,6 +119,7 @@ int main(string[] args)
 		{
 			res.headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,X-File-Name,X-File-Size";
 			res.headers["Access-Control-Allow-Origin"] = "*";
+			res.headers["Access-Control-Expose-Headers"] = "Content-Location";
 		}
 
 		// TODO: Handle DELETE requests
