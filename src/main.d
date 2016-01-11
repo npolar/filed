@@ -18,8 +18,8 @@ struct FileMetaData
 
 int main(string[] args)
 {
-	enum    PROGRAM_VERSION     = 0.14;
-	enum    PROGRAM_BUILD_YEAR  = "2015";
+	enum    PROGRAM_VERSION     = 0.20;
+	enum    PROGRAM_BUILD_YEAR  = 2016;
 
 	ushort  port                = 0xEA7;    // Listening port number (3751)
 	string  fileDir             = "files";  // File storage directory
@@ -266,6 +266,20 @@ int main(string[] args)
 
 				res.headers["Content-Disposition"] = "attachment; filename=\"" ~ fileName ~ "\"";
 				res.headers["Content-Length"] = fileSize;
+				res.headers["Accept-Ranges"] = "bytes";
+
+				// Enable seeking (useful for media streaming)
+				if("Range" in req.headers)
+				{
+					auto rangeMatch = matchFirst(req.headers["Range"], regex(`bytes=(\d+)-(\d+)`, "i"));
+
+					if(!rangeMatch.empty)
+					{
+						ulong fromByte = to!ulong(rangeMatch[1]), toByte = to!ulong(rangeMatch[2]);
+						fileStream.seek(fromByte);
+					}
+				}
+
 				return res.writeBody(fileStream, fileType);
 			}
 		}
