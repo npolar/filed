@@ -191,6 +191,7 @@ class FiledService
                 {
                     try
                     {
+                        bool created = true;
                         copy(tempPath, filePath);
                         remove(tempPath);
 
@@ -212,15 +213,24 @@ class FiledService
                                 pipe.stdin.writeln(json);
                                 pipe.stdin.flush();
                                 json = pipe.stdout.readln();
-                                auto ret = pipe.pid.wait();
+
+                                if(pipe.pid.wait() != 0)
+                                {
+                                    remove(filePath);
+                                    remove(metaFileName);
+                                    created = false;
+                                    break;
+                                }
 
                                 if(string error = pipe.stderr.readln())
                                     throw new Exception(error);
                             }
                         }
 
-                        res.headers["Content-Location"] = req.fullURL.toString ~ fileUUID;
-                        return res.writeJsonBody(parseJsonString(json), HTTPStatus.created);
+                        if(created)
+                            res.headers["Content-Location"] = req.fullURL.toString ~ fileUUID;
+
+                        return res.writeJsonBody(parseJsonString(json), created ? HTTPStatus.created : HTTPStatus.unprocessableEntity);
                     }
                     catch(Exception e)
                     {

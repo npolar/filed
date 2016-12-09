@@ -10,7 +10,7 @@ import std.stdio;
 int main(string[] args)
 {
     enum APP_NAME       = "filed";
-    enum APP_VERSION    = "0.4.0";
+    enum APP_VERSION    = "0.5.0";
     enum APP_AUTHORS    = [ "Remi A. Solås (remi@npolar.on)" ];
 
     ushort  port        = 0xEA7;    // Listening port number (3751)
