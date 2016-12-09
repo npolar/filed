@@ -5,6 +5,7 @@ import vibe.d;
 
 import std.algorithm;
 import std.file;
+import std.path;
 import std.process;
 import std.regex;
 import std.stdio;
@@ -18,6 +19,39 @@ class FiledService
         fileDir_        = settings.fileDirectory;
         maxFileSize_    = settings.maxFileSize;
         pipeCmds_       = settings.pipeCommands;
+    }
+
+    @path("/") // @contentType("application/json")
+    void getList(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        struct FileEntry
+        {
+            string  name;
+            string  type;
+            size_t  size;
+            string  path;
+        }
+
+        FileEntry[] entries;
+
+        try
+        {
+            foreach(string dirEntry; dirEntries(fileDir_, SpanMode.breadth))
+            {
+                if(dirEntry.endsWith(".meta"))
+                {
+                    FileEntry entry;
+                    auto file = File(dirEntry, "r");
+                    file.readf("%s\n%s\n%s\n", &entry.name, &entry.type, &entry.size);
+                    entry.path = req.fullURL.toString ~ dirEntry.baseName(".meta");
+                    entries ~= entry;
+                }
+            }
+
+            return res.writeJsonBody(entries);
+        }
+        catch(Exception e)
+            return res.writeBody(e.msg, HTTPStatus.internalServerError);
     }
 
     @path("/") @method(HTTPMethod.OPTIONS)
