@@ -17,10 +17,7 @@ class WebService
 {
     this(FiledSettings settings)
     {
-        corsEnabled_    = settings.corsEnabled;
-        fileDir_        = settings.fileDirectory;
-        maxFileSize_    = settings.maxFileSize;
-        pipeCmds_       = settings.pipeCommands;
+        settings_   = settings;
     }
 
     @path("/") // @contentType("application/json")
@@ -38,13 +35,11 @@ class WebService
 
         try
         {
-            foreach(string dirEntry; dirEntries(fileDir_, SpanMode.breadth))
+            foreach(string dirEntry; dirEntries(settings_.fileDirectory, SpanMode.breadth))
             {
                 if(dirEntry.endsWith(".meta"))
                 {
-                    MetaData metaData;
-                    metaData.readFromFile(dirEntry);
-
+                    auto metaData = MetaData(dirEntry);
                     auto entry = FileEntry(metaData.name, metaData.type, metaData.size);
                     entry.path = req.fullURL.toString ~ dirEntry.baseName(".meta");
                     entries ~= entry;
@@ -60,7 +55,7 @@ class WebService
     @path("/") @method(HTTPMethod.OPTIONS)
     void options(HTTPServerRequest req, HTTPServerResponse res)
     {
-        if(corsEnabled_)
+        if(settings_.corsEnabled)
             addCorsHeaders(res);
 
         res.headers["Allow"] = "POST,OPTIONS";
@@ -69,7 +64,7 @@ class WebService
 
     void post(HTTPServerRequest req, HTTPServerResponse res)
     {
-        if(corsEnabled_)
+        if(settings_.corsEnabled)
             addCorsHeaders(res);
 
         return (
@@ -85,17 +80,15 @@ class WebService
         auto uuid   = ("uuid" in req.params);
         auto range  = ("Range" in req.headers);
 
-        if(uuid && exists(fileDir_ ~ "/" ~ (*uuid)))
+        if(uuid && exists(settings_.fileDirectory ~ "/" ~ (*uuid)))
         {
-            string filePath = (fileDir_ ~ "/" ~ (*uuid));
+            string filePath = (settings_.fileDirectory ~ "/" ~ (*uuid));
             string fileName, fileType, fileSize;
             auto fileStream = openFile(filePath, FileMode.read);
 
             if(exists(filePath ~ ".meta"))
             {
-                MetaData metaData;
-                metaData.readFromFile(filePath);
-
+                auto metaData = MetaData(filePath);
                 fileName = metaData.name;
                 fileType = metaData.type;
                 fileSize = metaData.size.to!string;
@@ -132,10 +125,7 @@ class WebService
 
     private
     {
-        bool        corsEnabled_    = false;
-        string      fileDir_        = "files";
-        size_t      maxFileSize_    = 10 * 1024 * 1024; // 10 MiB
-        string[]    pipeCmds_       = [];
+        FiledSettings settings_;
 
         struct FileMetaData
         {
@@ -162,12 +152,12 @@ class WebService
                 {   
                     string tempPath = file.tempPath.toString;
                     string fileUUID = randomUUID.toString;
-                    string filePath = fileDir_ ~ "/" ~ fileUUID;
+                    string filePath = settings_.fileDirectory ~ "/" ~ fileUUID;
                     string fileName = file.filename.toString;
                     string fileType = file.headers.get("Content-Type", "application/octet-stream");
                     size_t fileSize = tempPath.getSize;
                     
-                    mkdirRecurse(fileDir_);
+                    mkdirRecurse(settings_.fileDirectory);
                     copy(tempPath, filePath);
                     remove(tempPath);
 
@@ -199,14 +189,14 @@ class WebService
 
             string clientAddr   = req.clientAddress.toAddressString;
             string fileUUID     = randomUUID.toString;
-            string filePath     = fileDir_ ~ "/" ~ fileUUID;
+            string filePath     = settings_.fileDirectory ~ "/" ~ fileUUID;
             string fileType     = req.headers.get("Content-Type", "application/octet-stream");
             size_t fileSize     = (*xFileSize).to!size_t;
             string tempPath     = format("%s/filed-%s-%s-%s.part", tempDir(), clientAddr, *xFileName, fileSize);
             size_t tempSize     = (tempPath.exists ? tempPath.getSize : 0);
 
             // File too large
-            if(fileSize > maxFileSize_ || (tempSize + req.bodyReader.leastSize) > maxFileSize_)
+            if(fileSize > settings_.maxFileSize || (tempSize + req.bodyReader.leastSize) > settings_.maxFileSize)
             {
                 if(tempPath.exists)
                     remove(tempPath);
@@ -216,7 +206,7 @@ class WebService
 
             try
             {
-                mkdirRecurse(fileDir_);
+                mkdirRecurse(settings_.fileDirectory);
 
                 auto metaFileName = filePath ~ ".meta";
                 auto fileStream = openFile(tempPath, FileMode.append);
@@ -240,9 +230,9 @@ class WebService
                             fileUUID, *xFileName, fileSize, fileType, req.fullURL.toString ~ fileUUID
                         );
 
-                        if(!pipeCmds_.empty)
+                        if(!settings_.pipeCommands.empty)
                         {
-                            foreach(cmd; pipeCmds_)
+                            foreach(cmd; settings_.pipeCommands)
                             {
                                 string command = cmd ~ " " ~ filePath;
                                 auto pipe = pipeShell(command);

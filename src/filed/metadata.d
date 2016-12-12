@@ -3,6 +3,7 @@ module filed.metadata;
 import std.algorithm;
 import std.conv;
 import std.datetime;
+import std.file;
 import std.regex;
 import std.stdio;
 
@@ -13,6 +14,20 @@ struct MetaData
     size_t  size;
     string  peer;
     string  time;
+
+    this(string name, string type, size_t size, string peer)
+    {
+        this.name = name;
+        this.type = type;
+        this.size = size;
+        this.peer = peer;
+    }
+
+    this(string filename)
+    {
+        if(filename.exists)
+            readFromFile(filename);
+    }
 
     void writeToFile(string filename)
     {
@@ -37,8 +52,11 @@ struct MetaData
 
     invariant
     {
-        enum timeExpr = ctRegex!`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`;
-        assert(!time.matchFirst(timeExpr).empty);
+        if(time.length)
+        {
+            enum timeExpr = ctRegex!`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`;
+            assert(!time.matchFirst(timeExpr).empty);
+        }
     }
 }
 
