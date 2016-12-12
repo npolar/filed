@@ -71,7 +71,7 @@ int main(string[] args)
 
     if(!maxFileSizeMatch.empty)
     {
-        maxFileSizeBytes = to!ulong(maxFileSizeMatch[1]);
+        maxFileSizeBytes = maxFileSizeMatch[1].to!size_t;
 
         switch(maxFileSizeMatch[2])
         {
@@ -111,7 +111,7 @@ int main(string[] args)
 
     // TODO: Add HTTPS support (settings.tlsContext)
 
-    router.registerWebInterface(new FiledService(filedSettings));
+    router.registerWebInterface(new WebService(filedSettings));
     listenHTTP(settings, router);
     return runEventLoop();
 }

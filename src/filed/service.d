@@ -1,6 +1,8 @@
 module filed.service;
 
 import filed.settings;
+import filed.metadata;
+
 import vibe.d;
 
 import std.algorithm;
@@ -11,7 +13,7 @@ import std.regex;
 import std.stdio;
 import std.uuid;
 
-class FiledService
+class WebService
 {
     this(FiledSettings settings)
     {
@@ -90,11 +92,13 @@ class FiledService
 
             if(exists(filePath ~ ".meta"))
             {
-                auto metaFile = File(filePath ~ ".meta", "r");
-                fileName = strip(metaFile.readln());
-                fileType = strip(metaFile.readln());
-                fileSize = strip(metaFile.readln());
-            }
+                MetaData metaData;
+                metaData.readFromFile(filePath);
+
+                fileName = metaData.name;
+                fileType = metaData.type;
+                fileSize = metaData.size.to!string;
+           }
 
             res.headers["Content-Disposition"]  = format("attachment; filename=\"%s\"", fileName);
             res.headers["Content-Length"]       = fileSize;
@@ -149,7 +153,7 @@ class FiledService
         void postFormData(ref HTTPServerRequest req, ref HTTPServerResponse res)
         {   
             string clientAddr = req.clientAddress.toAddressString;
-            FileMetaData[string] fileMap;
+            MetaData[string] fileMap;
             
             try 
             {   
@@ -165,12 +169,10 @@ class FiledService
                     mkdirRecurse(fileDir_);
                     copy(tempPath, filePath);
                     remove(tempPath);
-                    
-                    auto metaDataFile = File(filePath ~ ".meta", "w");
-                    [ fileName, fileType, fileSize.to!string, clientAddr ]
-                    .each!(a=>metaDataFile.writeln(a));
-                    
-                    fileMap[fileUUID] = FileMetaData(fileName, fileType, fileSize);
+
+                    auto metaData = MetaData(fileName, fileType, fileSize, clientAddr);
+                    metaData.writeToFile(filePath ~ ".meta");
+                    fileMap[fileUUID] = metaData;
                 }
             }
             catch(Exception e)
