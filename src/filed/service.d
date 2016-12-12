@@ -42,9 +42,10 @@ class WebService
             {
                 if(dirEntry.endsWith(".meta"))
                 {
-                    FileEntry entry;
-                    auto file = File(dirEntry, "r");
-                    file.readf("%s\n%s\n%s\n", &entry.name, &entry.type, &entry.size);
+                    MetaData metaData;
+                    metaData.readFromFile(dirEntry);
+
+                    auto entry = FileEntry(metaData.name, metaData.type, metaData.size);
                     entry.path = req.fullURL.toString ~ dirEntry.baseName(".meta");
                     entries ~= entry;
                 }
@@ -231,9 +232,8 @@ class WebService
                         copy(tempPath, filePath);
                         remove(tempPath);
 
-                        auto metaDataFile = File(metaFileName, "w");
-                        [ *xFileName, fileType, fileSize.to!string, clientAddr ]
-                        .each!(a=>metaDataFile.writeln(a));
+                        auto metaData = MetaData(*xFileName, fileType, fileSize, clientAddr);
+                        metaData.writeToFile(metaFileName);
 
                         string json = format(
                             "{\"uuid\":\"%s\",\"name\":\"%s\",\"size\":%s,\"type\":\"%s\",\"path\":\"%s\"}",
