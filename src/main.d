@@ -9,19 +9,21 @@ import std.stdio;
 
 int main(string[] args)
 {
-    enum APP_NAME       = "filed";
-    enum APP_VERSION    = "0.5.1";
-    enum APP_AUTHORS    = [ "Remi A. Solås (remi@npolar.on)" ];
+    enum APP_NAME               = "filed";
+    enum APP_VERSION            = "0.6.0";
+    enum APP_AUTHORS            = [ "Remi A. Solås (remi@npolar.on)" ];
 
-    ushort  port        = 0xEA7;    // Listening port number (3751)
-    string  fileDir     = "files";  // File storage directory
-    string  maxFileSize = "10MiB";  // Maximum file upload size (kB/MB/GB/KiB/MiB/GiB)
-    bool    corsEnabled = false;    // Cross-origin resource sharing
+    ushort      port            = 0xEA7;    // Listening port number (3751)
+    string      fileDir         = "files";  // File storage directory
+    string      maxFileSize     = "10MiB";  // Maximum file upload size (kB/MB/GB/KiB/MiB/GiB)
+    bool        corsEnabled     = false;    // Cross-origin resource sharing
+    string[]    pipeCommands;
 
     bool optHelp, optVersion;
     auto optParser = getopt(args,
         "d|file-dir",   "existing file upload save path (default: files)",  &fileDir,
         "m|max-size",   "maximum file size for uploads (default: 10MiB)",   &maxFileSize,
+        "pipe",         "pipe uploaded files through shell command",        &pipeCommands,
         "p|port",       "filed server listening port (default: 3751)",      &port,
         "cors",         "enable cross-origin resource sharing (CORS)",      &corsEnabled,
         "help",         "display this help information and exit",           &optHelp,
@@ -105,7 +107,7 @@ int main(string[] args)
     filedSettings.corsEnabled   = corsEnabled;
     filedSettings.fileDirectory = fileDir;
     filedSettings.maxFileSize   = maxFileSizeBytes;
-    filedSettings.pipeCommands  = args[1..$];
+    filedSettings.pipeCommands  = pipeCommands;
 
     // TODO: Add HTTPS support (settings.tlsContext)
 
